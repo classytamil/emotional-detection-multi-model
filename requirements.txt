@@ -1,0 +1,17 @@
+# Core Dependencies
+torch
+torchaudio
+transformers
+pyaudio
+numpy
+soundfile
+librosa
+
+# Video/Face Detection
+opencv-python
+deepface
+tf-keras
+
+# Utilities
+sentencepiece
+protobuf
