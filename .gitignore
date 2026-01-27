@@ -157,7 +157,5 @@ emotion_model_local/
 *.pth
 *.onnx
 
-# IDEs
-.vscode/
-.idea/
-*.swp
+.zencoder/
+.zencoder/

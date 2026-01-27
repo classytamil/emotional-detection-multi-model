@@ -56,7 +56,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- Sidebar ---
-st.sidebar.image("https://img.icons8.com/clouds/100/000000/emotion.png", width=100)
 st.sidebar.title("Navigation")
 st.sidebar.info("Select an input modality below:")
 
@@ -68,10 +67,9 @@ mode = st.sidebar.radio(
 st.sidebar.markdown("---")
 st.sidebar.markdown("### System Info")
 st.sidebar.text("Multimodal One-shot Agent")
-st.sidebar.text("v1.0.0")
 
 # --- Helper Functions (Cached) ---
-
+# Loads the audio model. If local path exists, uses it. Otherwise downloads from HuggingFace.
 @st.cache_resource
 def load_audio_model():
     if AudioEmotionDetector is None:
@@ -83,9 +81,19 @@ def load_audio_model():
 
 @st.cache_resource
 def load_text_pipeline():
-    # Use a specific model that gives happy/sad/etc emotions
-    # j-hartmann/emotion-english-distilroberta-base supports: anger, disgust, fear, joy, neutral, sadness, surprise
-    return pipeline("text-classification", model="j-hartmann/emotion-english-distilroberta-base", top_k=None)
+    # Try to load local model first (only if config.json exists)
+    model_path = os.path.join(os.getcwd(), "emotion_model_local")
+    if os.path.exists(model_path) and os.path.exists(os.path.join(model_path, "config.json")):
+        return pipeline("text-classification", model=model_path, top_k=None)
+    
+    # Fallback to online model (multilingual including Tamil)
+    # Using a model based on XLM-RoBERTa optimized for emotion
+    try:
+        return pipeline("text-classification", model="MilaNLProc/xlm-emo-t", top_k=None)
+    except Exception as e:
+        # If online load fails, return None so the app doesn't crash/hang forever next time
+        print(f"Error loading model: {e}")
+        return None
 
 # --- Video Processor ---
 
@@ -236,8 +244,8 @@ elif mode == "🎤 Audio Analysis":
 
 
 elif mode == "📝 Text Analysis":
-    st.header("Text Emotion Detection")
-    st.write("Type existing text to analyze its sentiment/emotion.")
+    st.header("Multilingual Text Emotion Detection")
+    st.write("Type text in **English, Tamil,** or other languages to analyze emotions.")
     
     # Load Text Model
     with st.spinner("Loading Text Model..."):
@@ -247,8 +255,11 @@ elif mode == "📝 Text Analysis":
             st.error(f"Failed to load text pipeline: {e}")
             text_pipe = None
 
-    if text_pipe:
-        user_text = st.text_area("Enter text here:", height=150, placeholder="I am feeling great today!")
+    if text_pipe is None:
+        st.error("⚠️ Model failed to load.")
+        st.warning("The multilingual model could not be downloaded. Please check your internet connection or restart the app.")
+    else:
+        user_text = st.text_area("Enter text here:", height=150, placeholder="Type something... e.g., 'I am very happy' or 'நான் மிகவும் மகிழ்ச்சியாக இருக்கிறேன்'")
         
         if st.button("Analyze Text"):
             if user_text.strip():

@@ -12,7 +12,7 @@ import pyaudio
 try:
     import torch
     import torchaudio
-    from transformers import Wav2Vec2Processor, Wav2Vec2ForSequenceClassification
+    from transformers import Wav2Vec2FeatureExtractor, Wav2Vec2ForSequenceClassification
     AUDIO_DEPS_AVAILABLE = True
 except ImportError as e:
     print(f"Warning: Audio dependencies not available: {e}")
@@ -20,14 +20,14 @@ except ImportError as e:
     # Dummy classes/modules to prevent NameErrors before usage
     torch = None
     torchaudio = None
-    Wav2Vec2Processor = None
+    Wav2Vec2FeatureExtractor = None
     Wav2Vec2ForSequenceClassification = None
 except OSError as e:
     print(f"Warning: Audio library load error: {e}")
     AUDIO_DEPS_AVAILABLE = False
     torch = None
     torchaudio = None
-    Wav2Vec2Processor = None
+    Wav2Vec2FeatureExtractor = None
     Wav2Vec2ForSequenceClassification = None
 
 class AudioEmotionDetector:
@@ -42,13 +42,29 @@ class AudioEmotionDetector:
             raise ImportError("Audio dependencies (torch, torchaudio, transformers) are not available or failed to load.")
 
         if model_path and os.path.exists(model_path):
-            print(f"Loading model from {model_path}...")
-            self.processor = Wav2Vec2Processor.from_pretrained(model_path)
-            self.model = Wav2Vec2ForSequenceClassification.from_pretrained(model_path)
+            # Verify it's a valid model directory
+            try:
+                if os.path.exists(os.path.join(model_path, "config.json")):
+                    print(f"Loading model from {model_path}...")
+                    self.processor = Wav2Vec2FeatureExtractor.from_pretrained(model_path)
+                    self.model = Wav2Vec2ForSequenceClassification.from_pretrained(model_path)
+                else:
+                    raise ValueError("Missing config.json")
+            except Exception as e:
+                print(f"Warning: Failed to load local model from {model_path}: {e}")
+                print("Falling back to online model...")
+                try:
+                    model_name = "ehcalabres/wav2vec2-lg-xlsr-en-speech-emotion-recognition"
+                    self.processor = Wav2Vec2FeatureExtractor.from_pretrained(model_name)
+                    self.model = Wav2Vec2ForSequenceClassification.from_pretrained(model_name)
+                except Exception as online_error:
+                    import traceback
+                    traceback.print_exc()
+                    raise ImportError(f"Online fallback failed: {online_error}")
         else:
             print("Loading model from HuggingFace (this may take time on first run)...")
             model_name = "ehcalabres/wav2vec2-lg-xlsr-en-speech-emotion-recognition"
-            self.processor = Wav2Vec2Processor.from_pretrained(model_name)
+            self.processor = Wav2Vec2FeatureExtractor.from_pretrained(model_name)
             self.model = Wav2Vec2ForSequenceClassification.from_pretrained(model_name)
         
         self.model.eval()
@@ -58,7 +74,7 @@ class AudioEmotionDetector:
         # Emotion labels for this model
         self.emotions = ['angry', 'calm', 'disgust', 'fearful', 'happy', 'neutral', 'sad', 'surprised']
         
-        print(f"✓ Model loaded successfully on {self.device}")
+        print(f"[DONE] Model loaded successfully on {self.device}")
     
     def predict_emotion(self, audio_path):
         """
@@ -158,7 +174,7 @@ class AudioEmotionDetector:
             data = stream.read(CHUNK)
             frames.append(data)
         
-        print("✓ Recording finished")
+        print("[DONE] Recording finished")
         
         stream.stop_stream()
         stream.close()
@@ -172,7 +188,7 @@ class AudioEmotionDetector:
         wf.writeframes(b''.join(frames))
         wf.close()
         
-        print(f"✓ Audio saved to {output_file}")
+        print(f"[DONE] Audio saved to {output_file}")
         
         # Predict emotion
         result = self.predict_emotion(output_file)

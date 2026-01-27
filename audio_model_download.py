@@ -16,19 +16,21 @@ os.makedirs(save_path, exist_ok=True)
 print("Downloading Wav2Vec2 emotion recognition model...")
 print("This may take a few minutes depending on your internet connection...")
 
-# Download processor (handles audio preprocessing)
-processor = Wav2Vec2Processor.from_pretrained(
+# Download feature extractor (handles audio preprocessing)
+# Using FeatureExtractor instead of Processor because this model doesn't have a tokenizer
+from transformers import Wav2Vec2FeatureExtractor
+feature_extractor = Wav2Vec2FeatureExtractor.from_pretrained(
     "ehcalabres/wav2vec2-lg-xlsr-en-speech-emotion-recognition"
 )
-processor.save_pretrained(save_path)
-print(f"✓ Processor saved to {save_path}")
+feature_extractor.save_pretrained(save_path)
+print(f"[DONE] Feature Extractor saved to {save_path}")
 
 # Download model
 model = Wav2Vec2ForSequenceClassification.from_pretrained(
     "ehcalabres/wav2vec2-lg-xlsr-en-speech-emotion-recognition"
 )
 model.save_pretrained(save_path)
-print(f"✓ Model saved to {save_path}")
+print(f"[DONE] Model saved to {save_path}")
 
-print("\n✓ Download complete! You can now use the model offline.")
+print("\n[DONE] Download complete! You can now use the model offline.")
 print(f"Model location: {save_path}")
