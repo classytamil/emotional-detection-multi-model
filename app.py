@@ -71,7 +71,7 @@ st.sidebar.text("Multimodal One-shot Agent")
 # --- Helper Functions (Cached) ---
 # Loads the audio model. If local path exists, uses it. Otherwise downloads from HuggingFace.
 @st.cache_resource
-def load_audio_model():
+def get_audio_emotion_model():
     if AudioEmotionDetector is None:
         return None
     model_path = os.path.join(os.getcwd(), "audio_emotion_model")
@@ -189,7 +189,7 @@ elif mode == "🎤 Audio Analysis":
     # Load audio model
     with st.spinner("Loading Audio Model..."):
         try:
-            audio_detector = load_audio_model()
+            audio_detector = get_audio_emotion_model()
             st.success("Audio Model Loaded")
         except Exception as e:
             st.error(f"Failed to load audio model: {e}")
@@ -231,12 +231,39 @@ elif mode == "🎤 Audio Analysis":
                                 os.remove(tmp_path)
 
         with tab2:
-            st.write("Experimental: This requires browser support for media recording.")
-            # Simple alternative: "For recording, please use system recorder and upload in the previous tab for best stability."
-            # OR integration with st_audiorec if installed.
-            # Using st.audio_input if streamlit version supports it (new feature) or leaving as placeholder since user asked "use tem to store".
+            st.markdown("### Record Audio")
+            st.write("Use the microphone button below to record your voice.")
             
-            st.info("Please record audio using your device functionalities, save it, and upload it in the 'Upload Audio' tab.")
+            # Live audio recording
+            audio_value = st.audio_input("Record voice message")
+            
+            if audio_value is not None:
+                if st.button("Analyze Recording"):
+                    with st.spinner("Analyzing recorded audio..."):
+                        try:
+                            # Save to temp file
+                            with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_file:
+                                tmp_file.write(audio_value.getvalue())
+                                tmp_path = tmp_file.name
+                            
+                            results = audio_detector.predict_emotion(tmp_path)
+                            
+                            # Display results
+                            col_res1, col_res2 = st.columns(2)
+                            with col_res1:
+                                st.metric("Dominant Emotion", results['dominant_emotion'].upper(), f"{results['confidence']*100:.1f}%")
+                            
+                            with col_res2:
+                                st.write("All Emotions:")
+                                for emo, score in results['all_emotions'].items():
+                                    st.progress(score, text=f"{emo} ({score*100:.1f}%)")
+                                    
+                        except Exception as e:
+                            st.error(f"Error processing audio: {e}")
+                        finally:
+                            # Cleanup
+                            if 'tmp_path' in locals() and os.path.exists(tmp_path):
+                                os.remove(tmp_path)
     else:
         st.warning("⚠️ Audio emotion detection is currently unavailable.")
         st.info("This is likely due to missing dependencies (torch, torchaudio) or a library loading error. Please check the terminal logs.")

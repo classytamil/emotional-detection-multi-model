@@ -9,9 +9,11 @@ import numpy as np
 import wave
 import pyaudio
 
+
 try:
     import torch
     import torchaudio
+    import librosa
     from transformers import Wav2Vec2FeatureExtractor, Wav2Vec2ForSequenceClassification
     AUDIO_DEPS_AVAILABLE = True
 except ImportError as e:
@@ -20,6 +22,7 @@ except ImportError as e:
     # Dummy classes/modules to prevent NameErrors before usage
     torch = None
     torchaudio = None
+    librosa = None
     Wav2Vec2FeatureExtractor = None
     Wav2Vec2ForSequenceClassification = None
 except OSError as e:
@@ -27,6 +30,7 @@ except OSError as e:
     AUDIO_DEPS_AVAILABLE = False
     torch = None
     torchaudio = None
+    librosa = None
     Wav2Vec2FeatureExtractor = None
     Wav2Vec2ForSequenceClassification = None
 
@@ -39,7 +43,7 @@ class AudioEmotionDetector:
             model_path: Path to local model. If None, downloads from HuggingFace
         """
         if not AUDIO_DEPS_AVAILABLE:
-            raise ImportError("Audio dependencies (torch, torchaudio, transformers) are not available or failed to load.")
+            raise ImportError("Audio dependencies (torch, torchaudio, transformers, librosa) are not available or failed to load.")
 
         if model_path and os.path.exists(model_path):
             # Verify it's a valid model directory
@@ -86,20 +90,12 @@ class AudioEmotionDetector:
         Returns:
             dict: Emotion predictions with scores
         """
-        # Load audio file
-        waveform, sample_rate = torchaudio.load(audio_path)
-        
-        # Convert to mono if stereo
-        if waveform.shape[0] > 1:
-            waveform = torch.mean(waveform, dim=0, keepdim=True)
-        
-        # Resample to 16kHz if needed (model expects 16kHz)
-        if sample_rate != 16000:
-            resampler = torchaudio.transforms.Resample(sample_rate, 16000)
-            waveform = resampler(waveform)
-        
-        # Convert to numpy
-        audio_array = waveform.squeeze().numpy()
+        # Load audio file using librosa (more robust than torchaudio for various formats)
+        # librosa automatically handles resampling to 16kHz
+        try:
+            audio_array, sample_rate = librosa.load(audio_path, sr=16000)
+        except Exception as e:
+            raise ValueError(f"Error loading audio file: {e}")
         
         # Process audio
         inputs = self.processor(
