@@ -190,7 +190,8 @@ class RealtimeAudioEmotionDetector:
 def main():
     """Run real-time audio emotion detection"""
     
-    model_path = r"E:\Projects\emotion detection multi model\audio_emotion_model"
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    model_path = os.path.join(base_dir, "audio_emotion_model")
     
     if os.path.exists(model_path):
         detector = RealtimeAudioEmotionDetector(model_path, chunk_duration=3)

@@ -2,7 +2,8 @@ from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import os
 
 # Define save path for the text model
-save_path = r"E:\Projects\emotion detection multi model\emotion_model_local"
+# Define save path for the text model
+save_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "emotion_model_local")
 
 # Switch to a different multilingual model that supports Tamil
 model_name = "MilaNLProc/xlm-emo-t"

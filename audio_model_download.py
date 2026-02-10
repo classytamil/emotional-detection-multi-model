@@ -8,7 +8,8 @@ from transformers import Wav2Vec2Processor, Wav2Vec2ForSequenceClassification
 import os
 
 # Define save path
-save_path = r"E:\Projects\emotion detection multi model\audio_emotion_model"
+# Define save path
+save_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "audio_emotion_model")
 
 # Create directory if it doesn't exist
 os.makedirs(save_path, exist_ok=True)
