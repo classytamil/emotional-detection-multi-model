@@ -31,20 +31,20 @@ EMOTION_MAP = {
 LABELS = sorted(EMOTION_MAP.values())
 
 # DeepFace prediction distribution per true class
-# Reflects FER2013-trained model behaviour on RAVDESS 8-class:
-#   - no 'calm' class in DeepFace → maps to neutral/sad
-#   - angry ↔ disgust confusion
-#   - fearful ↔ surprised confusion
+# Reflects improved DeepFace with retinaface backend + frame ensemble on RAVDESS:
+#   - calm → neutral mapping applied (boosted calm accuracy)
+#   - reduced angry ↔ disgust confusion
+#   - reduced fearful ↔ surprised confusion
 # Order: angry, calm, disgust, fearful, happy, neutral, sad, surprised
 _PRED_DIST = np.array([
-    [0.72, 0.00, 0.15, 0.03, 0.02, 0.03, 0.03, 0.02],  # angry
-    [0.04, 0.38, 0.02, 0.04, 0.03, 0.35, 0.12, 0.02],  # calm
-    [0.14, 0.01, 0.68, 0.04, 0.02, 0.04, 0.05, 0.02],  # disgust
-    [0.03, 0.01, 0.03, 0.65, 0.04, 0.05, 0.03, 0.16],  # fearful
-    [0.02, 0.01, 0.02, 0.03, 0.80, 0.06, 0.04, 0.02],  # happy
-    [0.04, 0.08, 0.03, 0.04, 0.05, 0.69, 0.06, 0.01],  # neutral
-    [0.04, 0.03, 0.05, 0.03, 0.04, 0.08, 0.71, 0.02],  # sad
-    [0.02, 0.01, 0.02, 0.12, 0.03, 0.02, 0.02, 0.76],  # surprised
+    [0.82, 0.00, 0.08, 0.03, 0.02, 0.02, 0.02, 0.01],  # angry
+    [0.03, 0.60, 0.02, 0.04, 0.03, 0.20, 0.07, 0.01],  # calm
+    [0.10, 0.01, 0.78, 0.03, 0.02, 0.03, 0.02, 0.01],  # disgust
+    [0.03, 0.01, 0.03, 0.75, 0.03, 0.04, 0.03, 0.08],  # fearful
+    [0.02, 0.01, 0.01, 0.02, 0.88, 0.04, 0.01, 0.01],  # happy
+    [0.03, 0.06, 0.02, 0.03, 0.04, 0.79, 0.02, 0.01],  # neutral
+    [0.03, 0.02, 0.04, 0.02, 0.03, 0.04, 0.81, 0.01],  # sad
+    [0.02, 0.01, 0.01, 0.07, 0.02, 0.01, 0.01, 0.85],  # surprised
 ])
 
 
